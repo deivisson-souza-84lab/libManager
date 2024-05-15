@@ -15,6 +15,14 @@ class AuthorController extends Controller
      */
     public function index(Request $request)
     {
+        // Defini como 10 o número padrão de resultados por página.
+        $perPage = $request->query('per_page', 10);
+
+        // Busca a lista de autores, paginada.
+        $authors = Author::paginate($perPage);
+
+        // Retornar a resposta paginada como JSON
+        return response()->json($authors);
     }
 
     /**
