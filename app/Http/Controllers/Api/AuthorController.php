@@ -21,6 +21,13 @@ class AuthorController extends Controller
         // Busca a lista de autores, paginada.
         $authors = Author::paginate($perPage);
 
+        // Caso não haja nenhum author cadastrado a API vai tratar com um erro Not Found
+        if ($authors->isEmpty()) {
+            return response()->json([
+                'message' => 'Nenhum resultado encontrado.'
+            ], 404);
+        }
+
         // Retornar a resposta paginada como JSON
         return response()->json($authors);
     }
