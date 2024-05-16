@@ -10,7 +10,20 @@ class Author extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['name', 'date_of_birth'];
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'name', 'date_of_birth',
+    ];
 
-    protected $dates = ['deleted_at'];
+    /**
+     * The books that belong to the author.
+     */
+    public function books()
+    {
+        return $this->belongsToMany(Book::class);
+    }
 }
