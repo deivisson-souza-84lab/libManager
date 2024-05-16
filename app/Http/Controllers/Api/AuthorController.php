@@ -57,7 +57,7 @@ class AuthorController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function show(string $id)
+    public function show(int $id)
     {
         // Primeiro vamos buscar o autor pelo seu ID
         $author = Author::find($id);
