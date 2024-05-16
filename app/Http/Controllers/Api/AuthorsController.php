@@ -5,129 +5,116 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Author;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
+/**
+ * Class AuthorsController
+ * @package App\Http\Controllers\Api
+ */
 class AuthorsController extends Controller
 {
     /**
-     * Mostra a lista de Autores, com paginação.
-     * @param  \Illuminate\Http\Request  $request
+     * O método `index` vai listar todos os autores.
+     * 
+     * Autores com livros associados trarão também um array 
+     * com `id`, `title` e `publication_year` da tabela `books`.
+     * 
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index(Request $request)
+    public function index()
     {
-        // Defini como 10 o número padrão de resultados por página.
-        $perPage = $request->query('per_page', 10);
+        $authors = Author::with('books')->get();
 
-        // Busca a lista de autores, paginada.
-        $authors = Author::paginate($perPage);
-
-        // Caso não haja nenhum author cadastrado a API vai tratar com um erro Not Found
         if ($authors->isEmpty()) {
-            return response()->json([
-                'message' => 'Nenhum resultado encontrado.'
-            ], 404);
+            return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
         }
 
-        // Retornar a resposta paginada como JSON
-        return response()->json($authors);
+        return response()->json(['authors' => $authors], 200);
     }
 
     /**
-     * Método de gravação de um novo Autor  
+     * O método `store` vai gravar os dados do novo autor.
+     *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:authors',
             'date_of_birth' => 'required|date',
         ]);
 
-        $author = Author::create([
-            'name' => $request->name,
-            'date_of_birth' => $request->date_of_birth,
-        ]);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
+        }
 
-        return response()->json($author, 201);
+        $author = Author::create($request->all());
+        return response()->json(['author' => $author], 201);
     }
 
     /**
-     * Display the specified resource.
+     * O método `show` vai buscar os dados de um autor específico.
+     *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function show(int $id)
     {
-        // Primeiro vamos buscar o autor pelo seu ID
-        $author = Author::find($id);
+        $author = Author::with('books')->find($id);
 
-        // Caso o autor não exista, vamos retornar um erro informando que ele não foi encontrado.
         if (!$author) {
-            return response()->json([
-                'message' => 'Autor não encontrado.'
-            ], 404);
+            return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
         }
 
-        // Caso contrário o autor é retornado para o usuário.
-        return response()->json($author);
+        return response()->json(['author' => $author], 200);
     }
 
     /**
-     * Update the specified resource in storage.
+     * O método `update` vai atualizar os dados de um determinado autor.
+     *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, int $id)
     {
-        // Primeiro vamos buscar o autor pelo seu ID
-        $author = Author::find($id);
+        $author = Author::with('books')->find($id);
 
-        // Caso o autor não exista, vamos retornar um erro informando que ele não foi encontrado.
         if (!$author) {
-            return response()->json([
-                'message' => 'Autor não encontrado.'
-            ], 404);
+            return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
         }
 
-        // Se ele existe, vamos fazer a alteração que precisamos. 
-        // Utilizamos a regra `sometimes` para dizer que o campo só deve ser validado caso ele exista.
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255|unique:authors',
             'date_of_birth' => 'sometimes|required|date',
         ]);
 
-        // Com os campos validados, fazemos a gravação para os campos que existem através do método `$request->only()`
-        $author->update($request->only(['name', 'date_of_birth']));
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
+        }
 
-        // Após as modificações serem salvas, retornamos o conteúdo de `$author`.
-        return response()->json($author);
+        $author->update($request->all());
+
+        return response()->json(['author' => $author], 200);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * O método `destroy` vai excluir os dados de um determinado autor.
+     *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(int $id)
     {
-        // Primeiro vamos buscar o autor pelo seu ID 
-        $author = Author::find($id);
+        $author = Author::with('books')->find($id);
 
-        // Caso o autor não exista, vamos retornar um erro informando que ele não foi encontrado.
         if (!$author) {
-            return response()->json([
-                'message' => 'Autor não encontrado.'
-            ], 404);
+            return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
         }
 
-        // Se ele existe, vamos removê-lo. 
         $author->delete();
 
-        // Após a remoção, enviamos a mensagem de confirmação ao usuário.
-        return response()->json([
-            'message' => 'Autor removido com sucesso.'
-        ]);
+        return response()->json(['message' => 'Autor removido com sucesso.'], 200);
     }
 }
