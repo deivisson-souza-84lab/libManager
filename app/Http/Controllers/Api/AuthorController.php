@@ -107,9 +107,27 @@ class AuthorController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(string $id)
+    public function destroy(int $id)
     {
-        //
+        // Primeiro vamos buscar o autor pelo seu ID 
+        $author = Author::find($id);
+
+        // Caso o autor não exista, vamos retornar um erro informando que ele não foi encontrado.
+        if (!$author) {
+            return response()->json([
+                'message' => 'Autor não encontrado.'
+            ], 404);
+        }
+
+        // Se ele existe, vamos removê-lo. 
+        $author->delete();
+
+        // Após a remoção, enviamos a mensagem de confirmação ao usuário.
+        return response()->json([
+            'message' => 'Autor removido com sucesso.'
+        ]);
     }
 }
