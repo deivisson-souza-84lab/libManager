@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Author;
 use Illuminate\Http\Request;
 
-class AuthorController extends Controller
+class AuthorsController extends Controller
 {
     /**
      * Mostra a lista de Autores, com paginação.
