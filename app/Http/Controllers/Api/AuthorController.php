@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 class AuthorController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Mostra a lista de Autores, com paginação.
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
@@ -54,10 +54,23 @@ class AuthorController extends Controller
 
     /**
      * Display the specified resource.
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show(string $id)
     {
-        //
+        // Primeiro vamos buscar o autor pelo seu ID
+        $author = Author::find($id);
+
+        // Caso o autor não exista, vamos retornar um erro informando que ele não foi encontrado.
+        if (!$author) {
+            return response()->json([
+                'message' => 'Autor não encontrado.'
+            ], 404);
+        }
+
+        // Caso contrário o autor é retornado para o usuário.
+        return response()->json($author);
     }
 
     /**
@@ -65,7 +78,6 @@ class AuthorController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
     }
 
     /**
