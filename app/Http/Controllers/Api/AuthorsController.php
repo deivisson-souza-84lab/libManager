@@ -19,17 +19,45 @@ class AuthorsController extends Controller
      * Autores com livros associados trarão também um array 
      * com `id`, `title` e `publication_year` da tabela `books`.
      * 
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
-        $authors = Author::with('books')->get();
+        // Define quantos itens por página
+        $perPage = $request->input('per_page', 10);
+
+        $authors = Author::with('books')->has('books')->paginate($perPage);
 
         if ($authors->isEmpty()) {
             return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
         }
 
-        return response()->json(['authors' => $authors], 200);
+        $data = $authors->map(function ($author) {
+            return [
+                'id' => $author->id,
+                'name' => $author->name,
+                'date_of_birth' => $author->date_of_birth,
+                'books' => $author->books->map(function ($book) {
+                    return [
+                        'id' => $book->id,
+                        'name' => $book->title,
+                    ];
+                }),
+            ];
+        });
+
+        return response()->json([
+            'authors' => $data,
+            'pagination' => [
+                'total' => $authors->total(),
+                'per_page' => $authors->perPage(),
+                'current_page' => $authors->currentPage(),
+                'last_page' => $authors->lastPage(),
+                'from' => $authors->firstItem(),
+                'to' => $authors->lastItem(),
+            ],
+        ]);
     }
 
     /**
