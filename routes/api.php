@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\ApiController;
-use App\Http\Controllers\Api\AuthorController;
+use App\Http\Controllers\Api\AuthorsController;
+use App\Http\Controllers\Api\BooksController;
+use App\Http\Controllers\Api\LoansController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,4 +18,6 @@ Route::group(['middleware' => ['auth:api']], function () {
     Route::get('logout', [ApiController::class, 'logout']);
 
     Route::apiResource('authors', AuthorsController::class);
+    Route::apiResource('books', BooksController::class);
+    Route::apiResource('loans', LoansController::class);
 });
