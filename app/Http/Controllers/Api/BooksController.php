@@ -87,8 +87,6 @@ class BooksController extends Controller
         try {
             DB::beginTransaction();
 
-            throw new Exception("Error Processing Request", 1);
-
             $book = Book::create([
                 'title' => $request->input('title'),
                 'publication_year' => $request->input('publication_year'),
