@@ -27,7 +27,7 @@ class AuthorsController extends Controller
         // Define quantos itens por página
         $perPage = $request->input('per_page', 10);
 
-        $authors = Author::with('books')->has('books')->paginate($perPage);
+        $authors = Author::with('books')->paginate($perPage);
 
         if ($authors->isEmpty()) {
             return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
