@@ -95,7 +95,15 @@ class AuthorsController extends Controller
             return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
         }
 
-        return response()->json(['author' => $author], 200);
+        $data = [
+            'id' => $author->id,
+            'name' => $author->name,
+            'date_of_birth' => $author->date_of_birth,
+            'last_update' => $author->last_update,
+            'books' => $author->books
+        ];
+
+        return response()->json(['author' => $data], 200);
     }
 
     /**
