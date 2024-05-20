@@ -7,127 +7,169 @@ use App\Models\User;
 use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class ApiController extends Controller
 {
-    /**
-     * Método para calcular e formatar a data de expiração do Token.
-     * @return string retorna a data em formato de texto.
-     */
-    private function expiresDate()
-    {
-        $expires_in = auth()->factory()->getTTL() * 60;
-        $dateTimeNow = new DateTime();
-        $dateTimeNow->modify("+{$expires_in} seconds");
-        return $dateTimeNow->format('Y-m-d H:i:s');
+  /**
+   * Método para calcular e formatar a data de expiração do Token.
+   * @return string retorna a data em formato de texto.
+   */
+  private function expiresDate()
+  {
+    $expires_in = auth()->factory()->getTTL() * 60;
+    $dateTimeNow = new DateTime();
+    $dateTimeNow->modify("+{$expires_in} seconds");
+    return $dateTimeNow->format('Y-m-d H:i:s');
+  }
+
+  /**
+   * Método de registro de novos usuários na API
+   * @param  \Illuminate\Http\Request  $request
+   * @return \Illuminate\Http\Response
+   */
+  public function register(Request $request)
+  {
+    try {
+      // Validação dos dados da requisição
+      $request->validate([
+        'name' => 'required|string',
+        'email' => 'required|string|email|unique:users',
+        'password' => 'required|confirmed'
+      ]);
+      // Gravação de usuários por meio da model User
+      $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => bcrypt($request->password)
+      ]);
+      // Retorno da requisição
+      return response()->json([
+        'message' => 'usuário registrado com sucesso',
+        'data' => [
+          'id' => $user->id,
+          'name' => $user->name,
+          'email' => $user->email,
+          'last_update' => $user->updated_at,
+        ]
+      ], 201);
+    } catch (ValidationException $e) {
+      return response()->json([
+        'message' => 'Erro de validação',
+        'errors' => $e->errors()
+      ], 422);
+    } catch (\Throwable $th) {
+      return response()->json([
+        'message' => 'Erro ao registrar usuário',
+        'error' => $th->getMessage()
+      ], 500);
     }
+  }
 
-    /**
-     * Método de registro de novos usuários na API
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function register(Request $request)
-    {
-        // Validação dos dados da requisição
-        $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|string|email|unique:users',
-            'password' => 'required|confirmed'
-        ]);
+  /**
+   * Método de login de ususários na API
+   * @param  \Illuminate\Http\Request  $request
+   * @return \Illuminate\Http\Response
+   */
+  public function login(Request $request)
+  {
+    try {
+      // Validação dos dados da requisição
+      $request->validate([
+        'email' => 'required|email',
+        'password' => 'required'
+      ]);
 
-        // Gravação de usuários por meio da model User
-        User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password)
-        ]);
+      $token = auth()->attempt([
+        "email" => $request->email,
+        "password" => $request->password
+      ]);
 
-        // Retorno da requisição
+      if (!$token) {
         return response()->json([
-            'status' => true,
-            'message' => 'usuário registrado com sucesso',
-            'data' => []
-        ]);
+          'message' => 'Login inváido',
+        ], 401);
+      }
+
+      return response()->json([
+        'message' => 'Usuário logado.',
+        'token' => $token,
+        'expires_in' => $this->expiresDate()
+      ], 200);
+    } catch (ValidationException $e) {
+
+      return response()->json([
+        'message' => 'Erro de validação',
+        'errors' => $e->errors()
+      ], 422);
+    } catch (\Throwable $th) {
+
+      return response()->json([
+        'message' => 'Erro no login',
+        'error' => $th->getMessage()
+      ], 500);
     }
+  }
 
-    /**
-     * Método de login de ususários na API
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function login(Request $request)
-    {
-        // Validação dos dados da requisição
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
-        ]);
+  /**
+   * Método de visualização do perfil de usuário (JWT Auth Token)
+   * @return \Illuminate\Http\Response
+   */
+  public function profile()
+  {
+    $user = Auth()->user();
 
-        $token = auth()->attempt([
-            "email" => $request->email,
-            "password" => $request->password
-        ]);
+    return response()->json([
+      'message' => 'Dados do perfil.',
+      'data' => [
+        'id' => $user->id,
+        'name' => $user->name,
+        'email' => $user->email,
+        'last_update' => $user->updated_at
+      ]
+    ], 200);
+  }
 
-        if (!$token) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Login inváido',
-            ]);
-        }
+  /**
+   * Método de atualização do Token da API (JWT Auth Token)
+   * @return \Illuminate\Http\Response
+   */
+  public function refreshToken()
+  {
+    try {
+      $token = auth()->refresh();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Usuário logado.',
-            'token' => $token,
-            'expires_in' => $this->expiresDate()
-        ]);
+      return response()->json([
+        'message' => 'Token atualizado.',
+        'token' => $token,
+        'expires_in' => $this->expiresDate()
+      ], 200);
+    } catch (\Throwable $th) {
+      return response()->json([
+        'message' => 'Erro ao atualizar token',
+        'error' => $th->getMessage()
+      ], 500);
     }
+  }
 
-    /**
-     * Método de visualização do perfil de usuário (JWT Auth Token)
-     * @return \Illuminate\Http\Response
-     */
-    public function profile()
-    {
-        $userData = request()->user();
+  /**
+   * Método de encerramento de sessão da API (JWT Auth Token)
+   * @return \Illuminate\Http\Response
+   */
+  public function logout()
+  {
+    try {
+      auth()->logout();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Dados do perfil.',
-            'email' => $userData->email,
-            'user' => $userData->name,
-            'updated_at' => $userData->updated_at,
-        ]);
+      return response()->json([
+        'message' => 'Sessão encerrada.',
+      ], 200);
+    } catch (\Throwable $th) {
+
+      return response()->json([
+        'message' => 'Erro ao encerrar sessão',
+        'error' => $th->getMessage()
+      ], 500);
     }
-
-    /**
-     * Método de atualização do Token da API (JWT Auth Token)
-     * @return \Illuminate\Http\Response
-     */
-    public function refreshToken()
-    {
-        $token = auth()->refresh();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Token atualizado.',
-            'token' => $token,
-            'expires_in' => $this->expiresDate()
-        ]);
-    }
-
-    /**
-     * Método de encerramento de sessão da API (JWT Auth Token)
-     * @return \Illuminate\Http\Response
-     */
-    public function logout()
-    {
-        auth()->logout();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Sessão encerrada.',
-        ]);
-    }
+  }
 }
