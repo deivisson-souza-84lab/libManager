@@ -34,6 +34,7 @@ class LoansController extends Controller
      */
     $this->loanService = $loanService;
   }
+
   /**
    * O método `index` vai listar todos os empréstimos.
    *
