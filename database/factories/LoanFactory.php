@@ -24,16 +24,25 @@ class LoanFactory extends Factory
      */
     public function definition(): array
     {
-        // Verifica se existem registros nas tabelas relacionadas
-        if (User::count() === 0 || Book::count() === 0) {
-            return null;
-        }
+        // Obtém um usuário válido que não está com um empréstimo em aberto
+        $user = User::whereDoesntHave('loans', function ($query) {
+            $query->whereNull('return_date');
+        })
+            ->inRandomOrder()
+            ->first();
 
-        // Obtém um user_id válido
-        $userId = User::inRandomOrder()->first()->id;
+        // Obtém um livro válido que não está emprestado
+        $book = Book::whereNull('deleted_at')
+            ->whereDoesntHave('loanedBooks', function ($query) {
+                $query->whereHas('loan', function ($query) {
+                    $query->whereNull('return_date');
+                });
+            })
+            ->inRandomOrder()
+            ->first();
 
         return [
-            'user_id' => $userId,
+            'user_id' => $user->id,
             'loan_date' => $this->faker->dateTimeBetween('-1 year', 'now'),
             'return_date' => $this->faker->optional()->dateTime(),
             'expected_return_date' => $this->faker->dateTimeBetween('now', '+1 month'),
@@ -48,14 +57,19 @@ class LoanFactory extends Factory
     public function configure()
     {
         return $this->afterCreating(function (Loan $loan) {
-            // Associa livros emprestados ao empréstimo
-            $bookIds = Book::inRandomOrder()->limit(rand(1, 5))->pluck('id');
-            foreach ($bookIds as $bookId) {
-                LoanedBook::create([
-                    'loan_id' => $loan->id,
-                    'book_id' => $bookId,
-                ]);
-            }
+            // Obtém um livro válido que não está emprestado
+            $book = Book::whereNull('deleted_at')
+                ->whereDoesntHave('loanedBooks', function ($query) {
+                    $query->whereHas('loan', function ($query) {
+                        $query->whereNull('return_date');
+                    });
+                })
+                ->inRandomOrder()
+                ->first();
+            LoanedBook::create([
+                'loan_id' => $loan->id,
+                'book_id' => $book->id,
+            ]);
         });
     }
 }
