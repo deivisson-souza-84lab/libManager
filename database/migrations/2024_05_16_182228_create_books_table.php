@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('books', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->year('publication_year');
+            $table->integer('publication_year')->unsigned();
             $table->timestamps();
             $table->softDeletes();
         });
