@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreApiControllerRequest;
+use App\Http\Requests\StoreUserRequest;
 use App\Models\User;
 use DateTime;
 use Illuminate\Http\Request;
@@ -28,21 +30,12 @@ class ApiController extends Controller
    * @param  \Illuminate\Http\Request  $request
    * @return \Illuminate\Http\Response
    */
-  public function register(Request $request)
+  public function register(StoreUserRequest $request)
   {
     try {
-      // Validação dos dados da requisição
-      $request->validate([
-        'name' => 'required|string',
-        'email' => 'required|string|email|unique:users',
-        'password' => 'required|confirmed'
-      ]);
       // Gravação de usuários por meio da model User
-      $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => bcrypt($request->password)
-      ]);
+      $user = User::create($request->all());
+
       // Retorno da requisição
       return response()->json([
         'message' => 'usuário registrado com sucesso',
