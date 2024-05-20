@@ -8,7 +8,8 @@ use App\Models\LoanedBook;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-
+use App\Jobs\SendLoanEmail;
+use App\Models\User;
 
 /**
  * Class LoanService
@@ -195,6 +196,10 @@ class LoanService
             $this->addLoanedBook($loan->id, $book);
           }
 
+          $user = User::find($data['user_id']);
+
+          SendLoanEmail::dispatch($user, $loan);
+
           DB::commit();
           return $this->dataCreated($loan);
         }
@@ -280,8 +285,13 @@ class LoanService
         }
       }
 
+      $loan = $this->find($id);
+      $user = User::find($loan->user_id);
+
+      SendLoanEmail::dispatch($user, $loan);
+
       DB::commit();
-      return $this->dataUpdated($this->find($id));
+      return $this->dataUpdated($loan);
     } catch (\Throwable $th) {
       DB::rollBack();
       throw new \Exception($th->getMessage());
