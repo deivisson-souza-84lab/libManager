@@ -116,7 +116,6 @@ class AuthorsControllerTest extends TestCase
    */
   public function testShow()
   {
-
     $user = User::factory()->create();
     $token = auth()->login($user);
 
@@ -163,16 +162,13 @@ class AuthorsControllerTest extends TestCase
    */
   public function testDestroy()
   {
-    $response = $this->get('/');
-
-    $response->assertStatus(200);
+    $user = User::factory()->create();
+    $token = auth()->login($user);
     $author = Author::factory()->create();
 
     $response = $this->deleteJson('/api/authors/' . $author->id);
 
-    // $response->assertStatus(200)
-    //   ->assertJson(['message' => 'Autor removido com sucesso.']);
-
-    // $this->assertDeleted($author);
+    $response->assertStatus(200)
+      ->assertJsonStructure(['message']);
   }
 }

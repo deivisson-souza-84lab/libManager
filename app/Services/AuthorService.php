@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Author;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Class AuthorService
@@ -68,8 +69,14 @@ class AuthorService
    */
   public function create(array $data): array
   {
-    $author = Author::create($data);
-    return $this->dataCreated($author);
+    try {
+      DB::beginTransaction();
+      $author = Author::create($data);
+      DB::commit();
+      return $this->dataCreated($author);
+    } catch (\Throwable $th) {
+      DB::rollBack();
+    }
   }
 
   /**
