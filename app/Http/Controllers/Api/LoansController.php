@@ -162,9 +162,6 @@ class LoansController extends Controller
     // Formatamos a saída como um array.
     $data = $this->loanService->getLoan($loan);
 
-    // Responde a requisição com um status `200` indicando o sucesso da operação.
-    return response()->json($data, 200);
-
     return response()->json(['loan' => $data], 200);
   }
 
