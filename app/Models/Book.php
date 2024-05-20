@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Book extends Model
 {
     use HasFactory, SoftDeletes;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -18,11 +19,19 @@ class Book extends Model
         'title', 'publication_year',
     ];
 
-    /**
-     * The books that belong to the author.
-     */
     public function authors()
     {
-        return $this->belongsToMany(Author::class);
+        return $this->belongsToMany(Author::class, 'author_books')
+            ->withTimestamps()->whereNull('author_books.deleted_at');
+    }
+
+    public function loans()
+    {
+        return $this->belongsToMany(Loan::class, 'loaned_books');
+    }
+
+    public function loanedBooks()
+    {
+        return $this->hasMany(LoanedBook::class);
     }
 }
