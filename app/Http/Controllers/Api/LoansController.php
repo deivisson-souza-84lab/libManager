@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreLoanRequest;
+use App\Http\Requests\UpdateLoanRequest;
 use App\Models\Loan;
 use App\Models\LoanedBook;
+use App\Services\LoanService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +19,21 @@ use Illuminate\Support\Facades\Validator;
  */
 class LoansController extends Controller
 {
+  protected $loanService;
+
+  public function __construct(LoanService $loanService)
+  {
+    /**
+     * Aqui estou instanciando a classe `BookService`.
+     * Ela foi criada com a principal finalidade de reduzir processamento 
+     * de código dentro do BooksController. Ela assume a responsabilidade 
+     * de manipular e formatar os dados da model Book.
+     * 
+     * Além disso, a classe `BookService` me permite um melhor controle 
+     * sobre testes e utilizações dos recursos da model Book.
+     */
+    $this->loanService = $loanService;
+  }
   /**
    * O método `index` vai listar todos os empréstimos.
    *
@@ -24,139 +42,105 @@ class LoansController extends Controller
    */
   public function index(Request $request)
   {
+    // Define a quantidade de itens por página
     $perPage = $request->input('per_page', 10);
 
-    $loans = Loan::with('loanedBooks.book')->paginate($perPage);
+    /**
+     * Busca todos os dados da tabela `loans`.
+     * O parâmetro indica que queremos os resultados com paginação.
+     * Isso nos tratá um resultado do tipo Illuminate\Contracts\Pagination\LengthAwarePaginator
+     */
+    $loans = $this->loanService->findAll($perPage);
 
+    // Verifica se a consulta gerou resultados
     if ($loans->isEmpty()) {
+      // Caso não tenha retornado, responde com um código de erro `not found`
       return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
     }
 
-    // Transforma os dados para o formato desejado
-    $data = $loans->map(function ($loan) {
-      return [
-        'id' => $loan->id,
-        'user_id' => $loan->user_id,
-        'loan_date' => $loan->loan_date,
-        'return_date' => $loan->return_date,
-        'loaned_books' => $loan->loanedBooks->map(function ($loanedBook) {
-          return [
-            'id' => $loanedBook->id,
-            'expected_return_date' => $loanedBook->expected_return_date,
-            'books' => [
-              'id' => $loanedBook->book->id,
-              'title' => $loanedBook->book->title,
-              'publication_year' => $loanedBook->book->publication_year,
-            ],
-          ];
-        }),
-      ];
-    });
+    // Formatamos a saída como um array com paginação.
+    $data = $this->loanService->getAllPaginate($loans);
 
-    // Retorna a resposta paginada no formato desejado
-    return response()->json([
-      'loans' => $data,
-      'pagination' => [
-        'total' => $loans->total(),
-        'per_page' => $loans->perPage(),
-        'current_page' => $loans->currentPage(),
-        'last_page' => $loans->lastPage(),
-        'from' => $loans->firstItem(),
-        'to' => $loans->lastItem(),
-      ],
-    ]);
+    // Responde a requisição com um status `200` indicando o sucesso da operação.
+    return response()->json($data, 200);
+
+    // $perPage = $request->input('per_page', 10);
+
+    // $loans = Loan::with('loanedBooks.book')->paginate($perPage);
+
+    // if ($loans->isEmpty()) {
+    //   return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
+    // }
+
+    // $data = $loans->map(function ($loan) {
+    //   return [
+    //     'id' => $loan->id,
+    //     'user_id' => $loan->user_id,
+    //     'user_name' => $loan->user->name,
+    //     'loan_date' => $loan->loan_date,
+    //     'return_date' => $loan->return_date,
+    //     'expected_return_date' => $loan->expected_return_date,
+    //     'books' => $loan->loanedBooks->map(function ($loanedBook) {
+    //       if ($loanedBook->book) {
+    //         return [
+    //           'book' => [
+    //             'id' => $loanedBook->book->id,
+    //             'title' => $loanedBook->book->title,
+    //             'publication_year' => $loanedBook->book->publication_year,
+    //             'authors' => $loanedBook->book->authors->map(function ($author) {
+    //               return [
+    //                 'author' => [
+    //                   'id' => $author->id,
+    //                   'name' => $author->name,
+    //                 ]
+    //               ];
+    //             })
+    //           ]
+    //         ];
+    //       }
+    //       return [];
+    //     })->toArray(),
+    //   ];
+    // })->toArray();
+
+    // // Retorna a resposta paginada no formato desejado
+    // return response()->json([
+    //   'loans' => $data,
+    //   'pagination' => [
+    //     'total' => $loans->total(),
+    //     'per_page' => $loans->perPage(),
+    //     'current_page' => $loans->currentPage(),
+    //     'last_page' => $loans->lastPage(),
+    //     'from' => $loans->firstItem(),
+    //     'to' => $loans->lastItem(),
+    //   ],
+    // ]);
   }
 
   /**
    * Store a newly created resource in storage.
    */
-  public function store(Request $request)
+  public function store(StoreLoanRequest $request)
   {
-
-    $validator = Validator::make($request->all(), [
-      'user_id' => 'required|integer|exists:users,id',
-      'loan_date' => 'required|date',
-      'expected_return_date' => 'sometimes|date',
-      'loaned_books' => 'required|array|min:1',
-      'loaned_books.*' => 'required|integer|exists:books,id',
-    ]);
-
-    if ($validator->fails()) {
-      return response()->json(['errors' => $validator->errors()], 400);
-    }
-
-    // Verificar se algum dos livros já está emprestado
-    $loanedBooks = $request->input('loaned_books');
-    $currentlyLoanedBooks = LoanedBook::whereIn('book_id', $loanedBooks)
-      ->whereHas('loan', function ($query) {
-        $query->whereNull('return_date');
-      })
-      ->with('book')
-      ->get();
-
-    if ($currentlyLoanedBooks->isNotEmpty()) {
-      $loanedBookDetails = $currentlyLoanedBooks->map(function ($loanedBook) {
-        return [
-          'id' => $loanedBook->book->id,
-          'name' => $loanedBook->book->title,
-        ];
-      });
-
-      return response()->json([
-        'error' => 'Os seguintes livros já estão emprestados e não podem ser emprestados novamente:',
-        'books' => $loanedBookDetails,
-      ], 400);
-    }
-
     try {
-      // Iniciar uma transação
-      DB::beginTransaction();
+      /**
+       * Aqui utilizamos a classe `LoanService` através do método `create` 
+       * que vai criar os dados na tabela `loans` e então devolvê-los 
+       * em um array já formatado com a resposta da requisição.
+       */
+      $loan = $this->loanService->create($request->all());
 
-      $loanDate = Carbon::parse($request->input('loan_date'));
-      $expectedReturnDate = $request->input('expected_return_date') ? Carbon::parse($request->input('expected_return_date')) : $loanDate->copy()->addDays(10);
-
-      // Criar um novo empréstimo
-      $loan = Loan::create([
-        'user_id' => $request->input('user_id'),
-        'loan_date' => $loanDate->format('Y-m-d H:i:s'),
-        'expected_return_date' => $expectedReturnDate->format('Y-m-d H:i:s'),
-      ]);
-
-      // Adicionar os livros emprestados ao empréstimo
-      foreach ($request->input('loaned_books') as $book) {
-        $loan->loanedBooks()->create([
-          'book_id' => $book,
-        ]);
-      }
-
-      // Commit da transação
-      DB::commit();
-
-      $data = [
-        'user_id' => $loan->user_id,
-        'user_name' => $loan->user->name,
-        'loan_date' => $loan->loan_date,
-        'expected_return_date' => $loan->expected_return_date,
-        'id' => $loan->id,
-        'books' => $loan->books->map(function ($book) {
-          return [
-            'id' => $book->id,
-            'title' => $book->title,
-          ];
-        }),
-      ];
-
-      return response()->json(['loan' => $data], 201);
+      // Responde a requisição com um status `201` indicando o sucesso da operação.
+      return response()->json($loan, 201);
     } catch (\Throwable $th) {
-      // Reverter a transação em caso de erro
-      DB::rollback();
-
-      return response()->json([
-        'error' => 'Falha ao criar o empréstimo.',
-        'file' => $th->getFile(),
-        'line' => $th->getLine(),
-        'message' => $th->getMessage(),
-      ], 500);
+      // Responde a requisição com um erro genérico em caso de falha.
+      // Os detalhes do erro ficarão registrados em log.
+      $error = [
+        "success" => false,
+        "message" => 'Não foi possível registrar o empréstimo'
+      ];
+      // Responde a requisição com um status `500` indicando o erro da operação.
+      return response()->json($error, 500);
     }
   }
 
@@ -165,26 +149,20 @@ class LoansController extends Controller
    */
   public function show(string $id)
   {
-    $loan = Loan::with('books')->find($id);
+    // Busca os dados da tabela `loans` através do `id` informado.
+    $loan = $this->loanService->find($id);
 
+    // Verifica se a consulta gerou resultados
     if (!$loan) {
+      // Caso não tenha retornado, responde com um código de erro `not found`
       return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
     }
 
-    $data = [
-      'id' => $loan->id,
-      'loan_date' => $loan->loan_date,
-      'return_date' => $loan->return_date,
-      'expected_return_date' => $loan->expected_return_date,
-      'user_id' => $loan->user->id,
-      'user_name' => $loan->user->name,
-      'books' => $loan->books->map(function ($author) {
-        return [
-          'id' => $author->id,
-          'name' => $author->title,
-        ];
-      })
-    ];
+    // Formatamos a saída como um array.
+    $data = $this->loanService->getLoan($loan);
+
+    // Responde a requisição com um status `200` indicando o sucesso da operação.
+    return response()->json($data, 200);
 
     return response()->json(['loan' => $data], 200);
   }
@@ -192,118 +170,24 @@ class LoansController extends Controller
   /**
    * Update the specified resource in storage.
    */
-  public function update(Request $request, string $id)
+  public function update(UpdateLoanRequest $request, string $id)
   {
-    $validator = Validator::make($request->all(), [
-      'user_id' => 'sometimes|required|integer|exists:users,id',
-      'loan_date' => 'sometimes|required|date',
-      'return_date' => 'sometimes|required|date',
-      'expected_return_date' => 'sometimes|required|date',
-      'loaned_books' => 'sometimes|required|array|min:1',
-      'loaned_books.*' => 'required|integer|exists:books,id',
-    ]);
+    /**
+     * Utilizamos a classe `LoanService`, através do método `update` 
+     * para atualizar os dados do empréstimo.
+     */
+    $update = $this->loanService->update($request->all(), $id);
 
-    if ($validator->fails()) {
-      return response()->json(['errors' => $validator->errors()], 400);
-    }
-    $loan = Loan::find($id);
-
-    if (!$loan) {
-      return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
-    }
-
-    // return response()->json(['loan' => $loan], 200);
-
-    try {
-
-      // Iniciar uma transação
-      DB::beginTransaction();
-
-      if ($request->has('loaned_books')) {
-
-        $loan->loanedBooks()->forceDelete();
-
-        // Verificar se algum dos livros já está emprestado
-        $loanedBooks = $request->input('loaned_books');
-        $currentlyLoanedBooks = LoanedBook::whereIn('book_id', $loanedBooks)
-          ->whereHas('loan', function ($query) {
-            $query->whereNull('return_date');
-          })
-          ->with('book')
-          ->get();
-
-        if ($currentlyLoanedBooks->isNotEmpty()) {
-          $loanedBookDetails = $currentlyLoanedBooks->map(function ($loanedBook) {
-            return [
-              'id' => $loanedBook->book->id,
-              'name' => $loanedBook->book->title,
-            ];
-          });
-
-          return response()->json([
-            'error' => 'Os seguintes livros já estão emprestados e não podem ser emprestados novamente:',
-            'books' => $loanedBookDetails,
-          ], 400);
-        }
-
-        // Adicionar os livros emprestados ao empréstimo
-        foreach ($request->input('loaned_books') as $book) {
-          $loan->loanedBooks()->create([
-            'book_id' => $book,
-          ]);
-        }
-      }
-
-      // Atualizar os dados do empréstimo, se fornecidos no request
-      if ($request->has('user_id')) {
-        $loan->user_id = $request->input('user_id');
-      }
-
-      if ($request->has('loan_date')) {
-        $loan->loan_date = Carbon::parse($request->input('loan_date'))->format('Y-m-d H:i:s');
-      }
-
-      if ($request->has('return_date')) {
-        $loan->return_date = Carbon::parse($request->input('return_date'))->format('Y-m-d H:i:s');
-      }
-
-      if ($request->has('expected_return_date')) {
-        $loan->expected_return_date = Carbon::parse($request->input('expected_return_date'))->format('Y-m-d H:i:s');
-      }
-
-      // Salvar as alterações
-      $loan->save();
-
-      // Commit da transação
-      DB::commit();
-
-      $data = [
-        'id' => $loan->id,
-        'loan_date' => $loan->loan_date,
-        'return_date' => $loan->return_date,
-        'expected_return_date' => $loan->expected_return_date,
-        'user_id' => $loan->user->id,
-        'user_name' => $loan->user->name,
-        'books' => $loan->books->map(function ($author) {
-          return [
-            'id' => $author->id,
-            'name' => $author->title,
-          ];
-        })
-      ];
-
-      return response()->json(['message' => 'Empréstimo atualizado com sucesso.', 'loan' => $data], 200);
-    } catch (\Throwable $th) {
-      // Reverter a transação em caso de erro
-      DB::rollback();
-
+    // O resultado esperado deve ser um array ou um booleano `false`.
+    if (!$update) {
+      // Se o resultado for `false`, respondemos com um status `404` indicando que não encontramos o resultado
       return response()->json([
-        'error' => 'Failed to update the loan.',
-        'file' => $th->getFile(),
-        'line' => $th->getLine(),
-        'message' => $th->getMessage(),
-      ], 500);
+        'message' => 'Nenhum resultado encontrado.'
+      ], 404);
     }
+
+    // Caso contrário, respondemos a requisição com um status `200` indicando o sucesso da operação.
+    return response()->json($update, 200);
   }
 
   /**
@@ -311,36 +195,32 @@ class LoansController extends Controller
    */
   public function destroy(string $id)
   {
-    $loan = loan::with('books')->find($id);
-
-    if (!$loan) {
-      return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
-    }
-
     try {
-      // Iniciar uma transação
-      DB::beginTransaction();
+      /**
+       * Utilizamos a classe `LoanService`, através do método `delete` 
+       * para atualizar o os dados do Autor.
+       */
+      $delete = $this->loanService->delete($id);
 
-      // Remover todos os livros emprestados associados a este empréstimo
-      $loan->loanedBooks()->delete();
+      // O resultado esperado deve ser um array ou um booleano `false`.
+      if (!$delete) {
+        // Se o resultado for `false`, respondemos com um status `404` indicando que não encontramos o resultado
+        return response()->json([
+          'message' => 'Nenhum resultado encontrado.'
+        ], 404);
+      }
 
-      // Excluir o empréstimo
-      $loan->delete();
-
-      // Commit da transação
-      DB::commit();
-
-      return response()->json(['message' => 'Empréstimo removido com sucesso.'], 200);
+      // Caso contrário, respondemos a requisição com um status `200` indicando o sucesso da operação.
+      return response()->json($delete, 200);
     } catch (\Throwable $th) {
-      // Reverter a transação em caso de erro
-      DB::rollback();
-
-      return response()->json([
-        'error' => 'Failed to delete the loan.',
-        'file' => $th->getFile(),
-        'line' => $th->getLine(),
-        'message' => $th->getMessage(),
-      ], 500);
+      // Responde a requisição com um erro genérico em caso de falha.
+      // Os detalhes do erro ficarão registrados em log.
+      $error = [
+        "success" => false,
+        "message" => 'Não foi possível remover o empréstimo.'
+      ];
+      // Responde a requisição com um status `500` indicando o erro da operação.
+      return response()->json($error, 500);
     }
   }
 }

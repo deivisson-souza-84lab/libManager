@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 
 class Loan extends Model
 {
@@ -19,21 +20,65 @@ class Loan extends Model
         'user_id', 'loan_date', 'return_date', 'expected_return_date'
     ];
 
-    /**
-     * Define o relacionamento com os livros emprestados.
-     */
-    public function loanedBooks()
+    // Sobrescrever métodos de exclusão para usar 'return_date'
+    protected static function boot()
     {
-        return $this->hasMany(LoanedBook::class);
+        parent::boot();
+
+        static::addGlobalScope('notReturned', function (Builder $builder) {
+            $builder->whereNull('return_date');
+        });
     }
 
-    public function books()
+    // Método para "deletar" o registro (marcar como retornado)
+    public function markAsReturned()
     {
-        return $this->hasManyThrough(Book::class, LoanedBook::class, 'loan_id', 'id', 'id', 'book_id');
+        $this->return_date = now();
+        $this->save();
+    }
+
+    // Método para "restaurar" o registro
+    public function unmarkAsReturned()
+    {
+        $this->return_date = null;
+        $this->save();
+    }
+
+    // Método para forçar a exclusão do registro
+    public function forceDelete()
+    {
+        return parent::delete();
+    }
+
+    // Sobrescrever o método padrão de exclusão para usar 'return_date'
+    public function delete()
+    {
+        if ($this->exists) {
+            $this->markAsReturned();
+            return true;
+        }
+
+        return false;
+    }
+
+    // Scope para obter registros "retornados"
+    public function scopeReturned($query)
+    {
+        return $query->withoutGlobalScope('notReturned')->whereNotNull('return_date');
     }
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function books()
+    {
+        return $this->belongsToMany(Book::class, 'loaned_books');
+    }
+
+    public function loanedBooks()
+    {
+        return $this->hasMany(LoanedBook::class);
     }
 }

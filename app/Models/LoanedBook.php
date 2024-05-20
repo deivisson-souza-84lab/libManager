@@ -19,30 +19,13 @@ class LoanedBook extends Model
         'loan_id', 'book_id'
     ];
 
-    /**
-     * The books that belong to the author.
-     */
-    public function loans()
+    public function book()
     {
-        return $this->belongsToMany(Loan::class);
+        return $this->belongsTo(Book::class);
     }
 
     public function loan()
     {
         return $this->belongsTo(Loan::class);
-    }
-
-    /**
-     * The books that belong to the author.
-     */
-    public function books()
-    {
-        return $this->belongsTo(Book::class);
-    }
-
-    // Definir a relação com o modelo Book
-    public function book()
-    {
-        return $this->belongsTo(Book::class);
     }
 }
