@@ -108,7 +108,7 @@ class BooksControllerTest extends TestCase
         $year = Carbon::parse($author->date_of_birth)->format('Y');
 
         $bookData = [
-            'title' => "De olhos bem fechados",
+            'title' => $this->faker->sentence(),
             'publication_year' => (int) $year,
             'authors' => [
                 $author->id
