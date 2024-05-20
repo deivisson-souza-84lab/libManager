@@ -242,8 +242,8 @@ Através da rota `api/authors` é possível criar, atualizar, remover ou visuali
 Abaixo um exemplo de requisição de `POST:api/authors`.
 ```javascript
 /**
-* Method: 
-* Route: api/
+* Method: POST
+* Route: api/authors
 */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
@@ -268,13 +268,13 @@ fetch("http://gestor-biblioteca.local/api/authors", requestOptions)
 #### Editar Autor
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
-|api/authors|PUT|A atualização de dados do Autor utiliza o método `PUT`. Neste caso, tanto em ferramentas como o *Postman* quanto nas implementações de requisição os parâmetros não são aceitos quando enviados através do `form-data`, no corpo da requisição, mas sim no raw, através de um JSON.stringify() *(no caso do JS)*. <br>
+|api/authors/{author}|PUT|A atualização de dados do Autor utiliza o método `PUT`. Neste caso, tanto em ferramentas como o *Postman* quanto nas implementações de requisição os parâmetros não são aceitos quando enviados através do `form-data`, no corpo da requisição, mas sim no raw, através de um JSON.stringify() *(no caso do JS)*. <br>
 
 Abaixo encontra-se um exemplo simples de correção de nome do Autor.
 ```javascript
 /**
-* Method: 
-* Route: api/
+* Method: PUT
+* Route: api/authors/{author}
 */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
@@ -305,8 +305,8 @@ fetch("http://gestor-biblioteca.local/api/authors/33", requestOptions)
 Abaixo segue o exemplo de uma requisição para o perfil de um autor.
 ```javascript
 /**
-* Method: 
-* Route: api/
+* Method: GET
+* Route: api/authors/{author}
 */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
@@ -332,8 +332,8 @@ Abaixo segue um exemplo de requisição para remover um usuário.
 
 ```javascript
 /**
-* Method: 
-* Route: api/
+* Method: DELETE
+* Route: api/authors/{author}
 */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
@@ -357,10 +357,12 @@ fetch("http://gestor-biblioteca.local/api/authors/35", requestOptions)
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
 |api/authors|GET|Semelhante a rota de visualização do perfil do autor, a rota para visualização de todos os autores apenas omite o `ID` na URL da requisição. O resultado também é similar ao resultado de `GET|api/authors/{author}`. A requisição devolve um JSOn com a chave "authors" cujo valor é um `array` e cada posição é identica a um resultado de `GET|api/authors/{author}`.
+
+Abaixo um exemplo de listagem de autores.
 ```javascript
 /**
-* Method: 
-* Route: api/
+* Method: GET
+* Route: api/authors
 */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
@@ -379,13 +381,20 @@ fetch("http://gestor-biblioteca.local/api/authors", requestOptions)
 ```
 
 ### Administração de Livros
+Através da rota `api/books` é possível criar, atualizar, remover ou visualizar listas com todos os livros e seus autores cadastrados. A busca de todos os livros vêm de maneira paginada devido ao possível volume de dados. A contsulta de um livro específicp não conta com paginação.
+
+> Todas precisam de autenticação, mas as rotas de cadastro, atualização e remoção de autores são acessadas apenas através de usuário do tipo `admin`.
+
 #### Cadastrar Livro
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
+|api/books|POST|O método de criação de um novo livro requer `string` title, `integer` publication_year com quatro dígitos `[YYYY]`. É necessário estar autenticado e ser um `admin`. Não são aceitos nomes duplicados, seguindo a mesma norma de `Authors`. Também é importante informa que todo livro obrigatóriamente precisa de um autor, então aqui temos algumas regras como: <ul><li>Não serão aceitos livros com ano de publicação menor que a data de nascimento do autor.</li><li>Não serão aceitos livros com autores que não estão cadastrados.</li><li>Não serão aceitos livros com autores inativos.</li><li>Não serão aceitos livrossem autores.</li></ul>
+
+Abaixo um exemplo de cadastro de livro.
 ```javascript
 /**
-* Method: 
-* Route: api/
+* Method: POST
+* Route: api/books
 */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
@@ -411,10 +420,13 @@ fetch("http://gestor-biblioteca.local/api/books", requestOptions)
 #### Editar Livro
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
+|api/books/{book}|PUT|O método de modificação de livros mostra como tudo pode ficar mais interessante. Este método, não só nos permite alterar o nome e ano de publicação de um livro, como também permite a inclusão e exclusão de livro através de parâmetros específicos. Através dos parâmetros `title` e `publication_year` podemos alterar respetivamente os campos de nome e ano de publicação. Mas podemos também enviar um `array` 'authors' indicando se queremos adicionar `authors[add]` ou remover `authors[remove]` um autor. Os valores de ambos os campos devem estar em um `array`.
+
+Abaixo um exemplo de modificação de livro, adicionando autores.
 ```javascript
 /**
- * Method: 
- * Route: api/
+ * Method: PUT
+ * Route: api/books/{book}
  */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
@@ -437,13 +449,44 @@ fetch("http://gestor-biblioteca.local/api/books/2", requestOptions)
   .then((result) => console.log(result))
   .catch((error) => console.error(error));
 ```
+
+Abaixo um exemplo de modificação de livro, removendo autores.
+```javascript
+/**
+ * Method: PUT
+ * Route: api/books/{book}
+ */
+const myHeaders = new Headers();
+myHeaders.append("Accept", "application/json");
+myHeaders.append("Authorization", "Bearer ");
+myHeaders.append("Content-Type", "application/json");
+
+const raw = JSON.stringify({
+  "authors": {"remove": [4]}
+});
+
+const requestOptions = {
+  method: "PUT",
+  headers: myHeaders,
+  body: raw,
+  redirect: "follow"
+};
+
+fetch("http://gestor-biblioteca.local/api/books/2", requestOptions)
+  .then((response) => response.text())
+  .then((result) => console.log(result))
+  .catch((error) => console.error(error));
+```
 #### Visualizar Livro
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
+|api/books/{book}|GET|A visualização de um livro é bem simples, basta apenas requisitar a url `api/books` através do método `GET` e passar o `id` do livro como parâmetro na url.
+
+Abaixo um exemplo de busca de um livro.
 ```javascript
 /**
- * Method: 
- * Route: api/
+ * Method: GET
+ * Route: api/books/{book}
  */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
@@ -466,10 +509,13 @@ fetch("http://gestor-biblioteca.local/api/books/4", requestOptions)
 #### Remover Livro
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
+|api/books/{book}|DELETE|A remoção de um livro é bem simples, basta apenas requisitar a url `api/books` através do método `DELETE` e passar o `id` do livro como parâmetro na url.
+
+Abaixo um exemplo de remoção de um livro.
 ```javascript
 /**
- * Method: 
- * Route: api/
+ * Method: DELETE
+ * Route: api/books/{book}
  */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
@@ -489,10 +535,13 @@ fetch("http://gestor-biblioteca.local/api/books/4", requestOptions)
 #### Listar Livro
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
+|api/books|GET|Listar os livros cadastrados também é bem simples, basta apenas requisitar a url `api/books` através do método `GET` sem passar o `id` do livro como parâmetro na url.
+
+Abaixo um exemplo de uma listagem de livros.
 ```javascript
 /**
- * Method: 
- * Route: api/
+ * Method: GET
+ * Route: api/books
  */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
@@ -516,10 +565,13 @@ fetch("http://gestor-biblioteca.local/api/books", requestOptions)
 #### Cadastrar Empréstimo
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
+|api/loans|POST|
+
+Abaixo um exemplo de como cadastrar um empréstimo.
 ```javascript
 /**
- * Method: 
- * Route: api/
+ * Method: POST
+ * Route: api/loans
  */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
@@ -547,10 +599,13 @@ fetch("http://gestor-biblioteca.local/api/loans", requestOptions)
 #### Editar Empréstimo
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
+|api/loans/{loan}|PUT|
+
+Abaixo um exemplo de como modificar um empréstimo.
 ```javascript
 /**
- * Method: 
- * Route: api/
+ * Method: PUT
+ * Route: api/loans/{loan}
  */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
@@ -580,10 +635,13 @@ fetch("http://gestor-biblioteca.local/api/loans/10", requestOptions)
 #### Visualizar Empréstimo
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
+|api/loans/{loan}|GET|
+
+Abaixo um exemplo de como buscar um empréstimo.
 ```javascript
 /**
- * Method: 
- * Route: api/
+ * Method: GET
+ * Route: api/loans/{loan}
  */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
@@ -603,10 +661,13 @@ fetch("http://gestor-biblioteca.local/api/loans/10", requestOptions)
 #### Remover Empréstimo
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
+|api/loans/{loan}|DELETE|
+
+Abaixo um exemplo de como remover um empréstimo.
 ```javascript
 /**
- * Method: 
- * Route: api/
+ * Method: DELETE
+ * Route: api/loans/{loan}
  */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
@@ -636,10 +697,11 @@ fetch("http://gestor-biblioteca.local/api/loans/10", requestOptions)
 #### Listar Empréstimo
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
+|api/loans|GET|
 ```javascript
 /**
- * Method: 
- * Route: api/
+ * Method: GET
+ * Route: api/loans/
  */
 const myHeaders = new Headers();
 myHeaders.append("Accept", "application/json");
