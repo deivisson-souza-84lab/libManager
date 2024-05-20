@@ -83,7 +83,7 @@ class AuthorsController extends Controller
       $author = $this->authorService->create($request->all());
 
       // Responde a requisição com um status `201` indicando o sucesso da operação.
-      return response->json($author, 201);
+      return response()->json($author, 201);
     } catch (\Throwable $th) {
       // Responde a requisição com um erro genérico em caso de falha.
       // Os detalhes do erro ficarão registrados em log.
