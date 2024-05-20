@@ -238,6 +238,7 @@ Através da rota `api/authors` é possível criar, atualizar, remover ou visuali
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
 |api/authors|POST|O método de criação de um novo autor requer os dados `string` name e `date` date_of_birth. Este último aceita apenas os formatos `Y-m-d` ou `d-m-Y`. Serão rejeitados outros formatos, inclusive os `Y/m/d` e `d/m/Y`. É necessário estar autenticado e ser um `admin`. Não são aceitos nomes duplicados de autores. Normalmente em uma base temos algúm código que os diferencie. Por falta deste agente identificador, utilizamos o campo `name` como `unique`.
+
 Abaixo um exemplo de requisição de `POST:api/authors`.
 ```javascript
 /**
