@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreAuthorRequest;
+use App\Http\Requests\UpdateAuthorRequest;
 use App\Models\Author;
+use App\Services\AuthorService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
 
 /**
  * Class AuthorsController
@@ -13,144 +16,183 @@ use Illuminate\Support\Facades\Validator;
  */
 class AuthorsController extends Controller
 {
+  protected $authorService;
+
+  public function __construct(AuthorService $authorService)
+  {
     /**
-     * O método `index` vai listar todos os autores.
+     * Aqui estou instanciando a classe `AuthorService`.
+     * Ela foi criada com a principal finalidade de reduzir processamento 
+     * de código dentro do AuthorController. Ela assume a responsabilidade 
+     * de manipular e formatar os dados da model Author.
      * 
-     * Autores com livros associados trarão também um array 
-     * com `id`, `title` e `publication_year` da tabela `books`.
-     * 
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * Além disso, a classe `AuthorService` me permite um melhor controle 
+     * sobre testes e utilizações dos recursos da model Author.
      */
-    public function index(Request $request)
-    {
-        // Define quantos itens por página
-        $perPage = $request->input('per_page', 10);
+    $this->authorService = $authorService;
+  }
 
-        $authors = Author::with('books')->paginate($perPage);
+  /**
+   * O método `index` vai listar todos os autores.
+   * 
+   * Autores com livros associados trarão também um array 
+   * com `id`, `title` e `publication_year` da tabela `books`.
+   * 
+   * @param  \Illuminate\Http\Request  $request
+   * @return \Illuminate\Http\JsonResponse
+   */
+  public function index(Request $request): JsonResponse
+  {
+    // Define a quantidade de itens por página
+    $perPage = $request->input('per_page', 10);
 
-        if ($authors->isEmpty()) {
-            return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
-        }
+    /**
+     * Busca todos os dados da tabela `authors`.
+     * O parâmetro indica que queremos os resultados com paginação.
+     * Isso nos tratá um resultado do tipo Illuminate\Contracts\Pagination\LengthAwarePaginator
+     */
+    $authors = $this->authorService->findAll($perPage);
 
-        $data = $authors->map(function ($author) {
-            return [
-                'id' => $author->id,
-                'name' => $author->name,
-                'date_of_birth' => $author->date_of_birth,
-                'books' => $author->books->map(function ($book) {
-                    return [
-                        'id' => $book->id,
-                        'name' => $book->title,
-                    ];
-                }),
-            ];
-        });
+    // Verifica se a consulta gerou resultados
+    if ($authors->isEmpty()) {
+      // Caso não tenha retornado, responde com um código de erro `not found`
+      return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
+    }
 
+    // Formatamos a saída como um array com paginação.
+    $data = $this->authorService->getAllPaginate($authors);
+
+    // Responde a requisição com um status `200` indicando o sucesso da operação.
+    return response()->json($data, 200);
+  }
+
+  /**
+   * O método `store` vai gravar os dados do novo autor.
+   *
+   * @param  \Illuminate\Http\Request  $request
+   * @return \Illuminate\Http\JsonResponse
+   */
+  public function store(StoreAuthorRequest $request): JsonResponse
+  {
+    try {
+      /**
+       * Aqui utilizamos a classe `AuthorService` através do método `create` 
+       * que vai criar os dados na tabela `authors` e então devolvê-los 
+       * em um array já formatado com a resposta da requisição.
+       */
+      $author = $this->authorService->create($request->all());
+
+      // Responde a requisição com um status `201` indicando o sucesso da operação.
+      return response->json($author, 201);
+    } catch (\Throwable $th) {
+      // Responde a requisição com um erro genérico em caso de falha.
+      // Os detalhes do erro ficarão registrados em log.
+      $error = [
+        "success" => false,
+        "message" => 'Não foi possível registrar o autor',
+      ];
+      // Responde a requisição com um status `500` indicando o erro da operação.
+      return response()->json($error, 500);
+    }
+  }
+
+  /**
+   * O método `show` vai buscar os dados de um autor específico.
+   *
+   * @param  int  $id
+   * @return \Illuminate\Http\JsonResponse
+   */
+  public function show(int $id): JsonResponse
+  {
+    // Busca os dados da tabela `authors` através do `id` informado.
+    $author = $this->authorService->find($id);
+    // $author = Author::with('books')->find($id);
+
+    // Verifica se a consulta gerou resultados
+    if (!$author) {
+      // Caso não tenha retornado, responde com um código de erro `not found`
+      return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
+    }
+
+    // Formatamos a saída como um array.
+    $data = $this->authorService->getAuthor($author);
+
+    // Responde a requisição com um status `200` indicando o sucesso da operação.
+    return response()->json($data, 200);
+  }
+
+  /**
+   * O método `update` vai atualizar os dados de um determinado autor.
+   *
+   * @param  \Illuminate\Http\Request  $request
+   * @param  int  $id
+   * @return \Illuminate\Http\JsonResponse
+   */
+  public function update(UpdateAuthorRequest $request, int $id): JsonResponse
+  {
+    try {
+      /**
+       * Utilizamos a classe `AuthorService`, através do método `update` 
+       * para atualizar o os dados do Autor.
+       */
+      $update = $this->authorService->update($request->all(), $id);
+
+      // O resultado esperado deve ser um array ou um booleano `false`.
+      if (!$update) {
+        // Se o resultado for `false`, respondemos com um status `404` indicando que não encontramos o resultado
         return response()->json([
-            'authors' => $data,
-            'pagination' => [
-                'total' => $authors->total(),
-                'per_page' => $authors->perPage(),
-                'current_page' => $authors->currentPage(),
-                'last_page' => $authors->lastPage(),
-                'from' => $authors->firstItem(),
-                'to' => $authors->lastItem(),
-            ],
-        ]);
+          'message' => 'Nenhum resultado encontrado.'
+        ], 404);
+      }
+
+      // Caso contrário, respondemos a requisição com um status `200` indicando o sucesso da operação.
+      return response()->json($update, 200);
+    } catch (\Throwable $th) {
+      // Responde a requisição com um erro genérico em caso de falha.
+      // Os detalhes do erro ficarão registrados em log.
+      $error = [
+        "success" => false,
+        "message" => 'Não foi possível modificar o autor',
+      ];
+      // Responde a requisição com um status `500` indicando o erro da operação.
+      return response()->json($error, 500);
     }
+  }
 
-    /**
-     * O método `store` vai gravar os dados do novo autor.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255|unique:authors',
-            'date_of_birth' => 'required|date',
-        ]);
+  /**
+   * O método `destroy` vai excluir os dados de um determinado autor.
+   *
+   * @param  int  $id
+   * @return \Illuminate\Http\JsonResponse
+   */
+  public function destroy(int $id): JsonResponse
+  {
+    try {
+      /**
+       * Utilizamos a classe `AuthorService`, através do método `delete` 
+       * para atualizar o os dados do Autor.
+       */
+      $delete = $this->authorService->delete($id);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 400);
-        }
+      // O resultado esperado deve ser um array ou um booleano `false`.
+      if (!$delete) {
+        // Se o resultado for `false`, respondemos com um status `404` indicando que não encontramos o resultado
+        return response()->json([
+          'message' => 'Nenhum resultado encontrado.'
+        ], 404);
+      }
 
-        $author = Author::create($request->all());
-        return response()->json(['author' => $author], 201);
+      // Caso contrário, respondemos a requisição com um status `200` indicando o sucesso da operação.
+      return response()->json($delete, 200);
+    } catch (\Throwable $th) {
+      // Responde a requisição com um erro genérico em caso de falha.
+      // Os detalhes do erro ficarão registrados em log.
+      $error = [
+        "success" => false,
+        "message" => 'Não foi possível remover o autor'
+      ];
+      // Responde a requisição com um status `500` indicando o erro da operação.
+      return response()->json($error, 500);
     }
-
-    /**
-     * O método `show` vai buscar os dados de um autor específico.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function show(int $id)
-    {
-        $author = Author::with('books')->find($id);
-
-        if (!$author) {
-            return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
-        }
-
-        $data = [
-            'id' => $author->id,
-            'name' => $author->name,
-            'date_of_birth' => $author->date_of_birth,
-            'last_update' => $author->last_update,
-            'books' => $author->books
-        ];
-
-        return response()->json(['author' => $data], 200);
-    }
-
-    /**
-     * O método `update` vai atualizar os dados de um determinado autor.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function update(Request $request, int $id)
-    {
-        $author = Author::with('books')->find($id);
-
-        if (!$author) {
-            return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:255|unique:authors',
-            'date_of_birth' => 'sometimes|required|date',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 400);
-        }
-
-        $author->update($request->all());
-
-        return response()->json(['author' => $author], 200);
-    }
-
-    /**
-     * O método `destroy` vai excluir os dados de um determinado autor.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function destroy(int $id)
-    {
-        $author = Author::with('books')->find($id);
-
-        if (!$author) {
-            return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
-        }
-
-        $author->delete();
-
-        return response()->json(['message' => 'Autor removido com sucesso.'], 200);
-    }
+  }
 }
