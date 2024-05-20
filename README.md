@@ -1,6 +1,7 @@
 # PROTÓTIPO API GERENCIAMENTO DE BIBLIOTECA
 
-  
+**Author:** Dêivisson Souza
+**Contato:** deivisson.souza@outlook.com.br
 
 Este é um pequeno, mas robusto, projeto para gerenciamento de uma biblioteca. Suas funções princiais são:
 
