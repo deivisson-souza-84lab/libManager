@@ -127,7 +127,7 @@ fetch("http://gestor-biblioteca.local/api/register", requestOptions)
 | :------- 	| :--------: | :-------- |
 | api/login |POST| A rota `login` é famosa por sua presença frequente e não há muito o que explicar. Atua com o método POST e recebe como parâmetro os campos (`email` email, `password` password ). Retorna um JSON com os campos `string` message, `string` token e o `datetime` expires_in.|
 
-Abaixo um exemplo de requisição de login.
+Abaixo um exemplo de requisição de `login`.
 ```javascript
 /**
  * Method: POST
@@ -152,11 +152,85 @@ fetch("http://gestor-biblioteca.local/api/login", requestOptions)
   .then((result) => console.log(result))
   .catch((error) => console.error(error));
 ```
+#### Logout
+| Route    | Method | Descrição   |
+| :------- 	| :--------: | :-------- |
+| api/login |GET| A rota `logout` é tão simples quanto a rota `login`. Basta apenas o usuário fazer uma requisição através do método `GET`, sem nenhum parâmetro necessário. É necessário enviar o `token` no `HEADER` da requisição.|
 
-- Logout
-- Visualização de Perfil
-- Atualização de Token
+Abaixo um exemplo de requisição de `logout`.
+```javascript
+/**
+ * Method: GET
+ * Route: api/logout
+ */
+const myHeaders = new Headers();
+myHeaders.append("Accept", "application/json");
+myHeaders.append("Authorization", "Bearer ");
 
+const requestOptions = {
+  method: "GET",
+  headers: myHeaders,
+  redirect: "follow"
+};
+
+fetch("http://gestor-biblioteca.local/api/logout", requestOptions)
+  .then((response) => response.text())
+  .then((result) => console.log(result))
+  .catch((error) => console.error(error));
+```
+#### Visualização de Perfil
+| Route    | Method | Descrição   |
+| :------- 	| :--------: | :-------- |
+| api/profile|GET| Tão simples quanto um `logout` a rota `profile` trará os dados do usuário autenticado. É feita através do método `GET` e também precisa do  `token` no `HEADER` da requisição.|
+
+Abaixo um exemplo de requisição de `profile`.
+```javascript
+/**
+ * Method: GET
+ * Route: api/logout
+ */
+const myHeaders = new Headers();
+myHeaders.append("Accept", "application/json");
+myHeaders.append("Authorization", "Bearer ");
+
+const requestOptions = {
+  method: "GET",
+  headers: myHeaders,
+  redirect: "follow"
+};
+
+fetch("http://gestor-biblioteca.local/api/profile", requestOptions)
+  .then((response) => response.text())
+  .then((result) => console.log(result))
+  .catch((error) => console.error(error));
+```
+#### Atualização de Token
+| Route    | Method | Descrição   |
+| :------- 	| :--------: | :-------- |
+| api/refresh-token|GET| Por fim, temos a rota `logout` a rota `refresh-token` que irá gerar um novo `token` de autenticação. É feita através do método `GET` e também precisa do  `token` no `HEADER` da requisição.|
+
+Abaixo um exemplo de requisição de `refresh-token`.
+
+```javascript
+/**
+ * Method: GET
+ * Route: api/refresh-token
+ */
+const myHeaders = new Headers();
+myHeaders.append("Accept", "application/json");
+myHeaders.append("Authorization", "Bearer ");
+
+const requestOptions = {
+  method: "GET",
+  headers: myHeaders,
+  redirect: "follow"
+};
+
+fetch("http://gestor-biblioteca.local/api/refresh-token", requestOptions)
+  .then((response) => response.text())
+  .then((result) => console.log(result))
+  .catch((error) => console.error(error));
+```
 ### Administração de Autores
 - Cadastrar Autor
 - Editar Autor
