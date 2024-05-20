@@ -10,8 +10,8 @@ Este é um pequeno, mas robusto, projeto para gerenciamento de uma biblioteca. S
 
 - Avisar aos usuários por e-mail sobre criação ou atualização do seu empréstimo;
 
-  > **Atenção**
-  > Todos os exemplos mostrados nesta documentação serão representados com códigos em Javascript, utilizando o método Fetch.
+ > **Atenção**
+ > Todos os exemplos mostrados nesta documentação serão representados com códigos em Javascript, utilizando o método Fetch.
 
 ## Ambiente
 
@@ -21,7 +21,9 @@ Para testes de disparo de e-mail foi utilizado o Mailhog, uma pequena aplicaçã
 
 Um projeto docker-compose será disponibilizado paralelamente a fim de montar toda a estrutura necessária para execução deste projeto.
 
-  
+> **PHP** 8.3.4
+> **Laravel** 11.x
+> **MariaDB** 11.3.2
 
 ## Funcionalidades
 
@@ -535,7 +537,7 @@ fetch("http://gestor-biblioteca.local/api/books/4", requestOptions)
 #### Listar Livro
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
-|api/books|GET|Listar os livros cadastrados também é bem simples, basta apenas requisitar a url `api/books` através do método `GET` sem passar o `id` do livro como parâmetro na url.
+|api/books|GET|Listar os livros cadastrados também é bem simples, basta apenas requisitar a url `api/books` através do método `GET`  **não informando**  o `id` do livro como parâmetro na url.
 
 Abaixo um exemplo de uma listagem de livros.
 ```javascript
@@ -565,7 +567,7 @@ fetch("http://gestor-biblioteca.local/api/books", requestOptions)
 #### Cadastrar Empréstimo
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
-|api/loans|POST|
+|api/loans|POST|O método de criação de um empréstimo requer `integer` *user_id* do usuário que está solicitando o empréstimo, `date` *loan_date* que é a data de início do empréstimo, `date` *expected_return_date* que é a data estimada de entrega e um `array` *books* com os `integer` ids dos livros associados ao empréstimo. Aqui também temos regras, são elas:<ul><li>Não será concedido novo empréstimo para usuário que já possui empréstimo ativo.</li><li>Não serão permitidos empréstimos de livros que já estão emprestados.</li><li>Não serão concedidos empréstimos a usuários inativos.</li><li>Não serão aceitos livros inativos.</li></ul>
 
 Abaixo um exemplo de como cadastrar um empréstimo.
 ```javascript
@@ -599,7 +601,7 @@ fetch("http://gestor-biblioteca.local/api/loans", requestOptions)
 #### Editar Empréstimo
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
-|api/loans/{loan}|PUT|
+|api/loans/{loan}|PUT|O método de modificação de empréstimo permite, além de mudar dados da operação, adicionar ou remover livros. A decisão foi tomada imaginando um cenário de troca do pedido. Não é permitido alterar a data de entrega `return_date` na modificação. Isso ocorre porque o campo `date` *return_date* é equivalente ao campo `date` *deleted_at*, dos `softDeletes()` no Laravel. Veja `App\Models\Loan` para melhor compreensão. O campo `date` *deleted_at* é modificado apenas na rota `DELETE|api/loans/{loan}`.
 
 Abaixo um exemplo de como modificar um empréstimo.
 ```javascript
@@ -635,7 +637,7 @@ fetch("http://gestor-biblioteca.local/api/loans/10", requestOptions)
 #### Visualizar Empréstimo
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
-|api/loans/{loan}|GET|
+|api/loans/{loan}|GET|A visualização de um empréstimo é bem simples, basta apenas requisitar a url `api/loans` através do método `GET` e passar o `id` do empréstimo como parâmetro na url.
 
 Abaixo um exemplo de como buscar um empréstimo.
 ```javascript
@@ -661,7 +663,7 @@ fetch("http://gestor-biblioteca.local/api/loans/10", requestOptions)
 #### Remover Empréstimo
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
-|api/loans/{loan}|DELETE|
+|api/loans/{loan}|DELETE|A remoção de um empréstimo é bem simples, basta apenas requisitar a url `api/loans` através do método `DELETE` e passar o `id` do empréstimo como parâmetro na url.
 
 Abaixo um exemplo de como remover um empréstimo.
 ```javascript
@@ -697,7 +699,7 @@ fetch("http://gestor-biblioteca.local/api/loans/10", requestOptions)
 #### Listar Empréstimo
 | Route    | Method | Descrição   |
 | :------- 	| :--------: | :-------- |
-|api/loans|GET|
+|api/loans|GET|Listar empréstimos cadastrados é bem simples quanto remover, basta apenas requisitar a url `api/loans` através do método `GET` **não informando** o `id` do livro como parâmetro na url.
 ```javascript
 /**
  * Method: GET
