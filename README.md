@@ -28,7 +28,9 @@ Um projeto docker-compose será disponibilizado paralelamente a fim de montar to
 
 ## Instalação
 1.Faça o download do projeto.
-> `git clone https://github.com/deivisson-souza-84lab/gerenciador-biblioteca.git gerenciador-biblioteca`
+```command line
+git clone https://github.com/deivisson-souza-84lab/gerenciador-biblioteca.git gerenciador-biblioteca
+```
 
 ## Funcionalidades
 
