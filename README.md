@@ -1,6 +1,6 @@
 # PROTÓTIPO API GERENCIAMENTO DE BIBLIOTECA
 
-**Author:** Dêivisson Souza
+**Author:** Dêivisson Souza<br/>
 **Contato:** deivisson.souza@outlook.com.br
 
 Este é um pequeno, mas robusto, projeto para gerenciamento de uma biblioteca. Suas funções princiais são:
@@ -25,6 +25,10 @@ Um projeto docker-compose será disponibilizado paralelamente a fim de montar to
 > **PHP** 8.3.4
 > **Laravel** 11.x
 > **MariaDB** 11.3.2
+
+## Instalação
+1.Faça o download do projeto.
+> `git clone https://github.com/deivisson-souza-84lab/gerenciador-biblioteca.git gerenciador-biblioteca`
 
 ## Funcionalidades
 
