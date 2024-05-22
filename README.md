@@ -27,9 +27,32 @@ Um projeto docker-compose será disponibilizado paralelamente a fim de montar to
 > **MariaDB** 11.3.2
 
 ## Instalação
-1.Faça o download do projeto.
+1. Faça o download do projeto.
 ```command line
 git clone https://github.com/deivisson-souza-84lab/gerenciador-biblioteca.git gerenciador-biblioteca
+```
+
+2. Com o projeto baixado, vamos começar a instalação criando uma cópia para o arquivo .env
+#### Windows
+```
+cd gerenciador-biblioteca
+copy .env-sample .env
+```
+
+#### linux
+```
+cd gerenciador-biblioteca
+cp .env-sample .env
+```
+
+3. Altere o arquivo de .env com suas configurações de banco de dados
+```
+DB_CONNECTION=[seu serviço de banco de dados]
+# DB_HOST=[host]
+# DB_PORT=[port]
+# DB_DATABASE=[dbname]
+# DB_USERNAME=[dbuser]
+# DB_PASSWORD=[dbpassword]
 ```
 
 ## Funcionalidades
