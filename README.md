@@ -65,22 +65,22 @@ Um projeto docker-compose será disponibilizado paralelamente a fim de montar to
 
 4. Salve e feche o arquivo `.env` e execute os seguintes comando no terminal.
 
-    #### O primeiro deles irá instalação todas as dependências do arquivo `composer.json`:
+    O primeiro deles irá instalação todas as dependências do arquivo `composer.json`:
     ```
     composer install
     ```
 
-    #### Em seguida, vamos gerar a API KEY, no arquivo `.env` com o comando:
+    Em seguida, vamos gerar a API KEY, no arquivo `.env` com o comando:
     ```
     php artisan key:generate
     ```
 
-    #### O próximo passo, será gerar a `secret` que será utilizada pelo JWT:
+    O próximo passo, será gerar a `secret` que será utilizada pelo JWT:
     ```
     php artisan jwt:secret
     ```
 
-    #### Agora vamos executar as migrations criando a nossa estrutura no banco de dados:
+    Agora vamos executar as migrations criando a nossa estrutura no banco de dados:
     ```
     php artisan migrate --seed
     ```
