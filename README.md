@@ -33,22 +33,22 @@ Um projeto docker-compose será disponibilizado paralelamente a fim de montar to
 > Veja também o guia de instalação atarvés do docker com `docker compose`.
 
 1. Faça o download do projeto.
-```command line
-git clone https://github.com/deivisson-souza-84lab/gerenciador-biblioteca.git gerenciador-biblioteca
-```
+  ```command line
+  git clone https://github.com/deivisson-souza-84lab/gerenciador-biblioteca.git gerenciador-biblioteca
+  ```
 
 2. Com o projeto baixado, vamos começar a instalação criando uma cópia para o arquivo `.env`
-#### Windows
-```command
-cd gerenciador-biblioteca
-copy .env-example .env
-```
+  #### Windows
+  ```command
+  cd gerenciador-biblioteca
+  copy .env-example .env
+  ```
 
-#### linux
-```sh
-cd gerenciador-biblioteca
-cp .env-example .env
-```
+  #### linux
+  ```sh
+  cd gerenciador-biblioteca
+  cp .env-example .env
+  ```
 
 3. Abra o arquivo `.env` e insira suas configurações de banco de dados.
 ```env
