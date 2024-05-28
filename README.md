@@ -1,6 +1,6 @@
 # PROTÓTIPO API GERENCIAMENTO DE BIBLIOTECA
 
-**Author:** Dêivisson Souza
+**Author:** Dêivisson Souza<br/>
 **Contato:** deivisson.souza@outlook.com.br
 
 Este é um pequeno, mas robusto, projeto para gerenciamento de uma biblioteca. Suas funções princiais são:
@@ -25,6 +25,65 @@ Um projeto docker-compose será disponibilizado paralelamente a fim de montar to
 > **PHP** 8.3.4
 > **Laravel** 11.x
 > **MariaDB** 11.3.2
+
+## Instalação
+
+> Este guia mostra como realizar a instalação deste projeto diretamente em sua máquina de desenvolvimento local, ou em um servidor de testes.
+>
+> Veja também o guia de instalação atarvés do docker com `docker compose`.
+
+1. Faça o download do projeto.
+    ```command line
+    git clone https://github.com/deivisson-souza-84lab/gerenciador-biblioteca.git gerenciador-biblioteca
+    ```
+
+2. Com o projeto baixado, vamos começar a instalação criando uma cópia para o arquivo `.env`
+    #### Windows
+    ```command
+    cd gerenciador-biblioteca
+    copy .env-example .env
+    ```
+
+    #### linux
+    ```sh
+    cd gerenciador-biblioteca
+    cp .env-example .env
+    ```
+
+3. Abra o arquivo `.env` e insira suas configurações de banco de dados.
+    ```env
+    DB_CONNECTION=[seu serviço de banco de dados]
+    DB_HOST=[host]
+    DB_PORT=[port]
+    DB_DATABASE=[dbname]
+    DB_USERNAME=[dbuser]
+    DB_PASSWORD=[dbpassword]
+    ```
+
+    > **Atenção**
+    > Não recomendo a utilização desta aplicação com o `sqlite`.
+
+4. Salve e feche o arquivo `.env` e execute os seguintes comando no terminal.
+
+    O primeiro deles irá instalação todas as dependências do arquivo `composer.json`:
+    ```
+    composer install
+    ```
+
+    Em seguida, vamos gerar a API KEY, no arquivo `.env` com o comando:
+    ```
+    php artisan key:generate
+    ```
+
+    O próximo passo, será gerar a `secret` que será utilizada pelo JWT:
+    ```
+    php artisan jwt:secret
+    ```
+
+    Agora vamos executar as migrations criando a nossa estrutura no banco de dados:
+    ```
+    php artisan migrate --seed
+    ```
 
 ## Funcionalidades
 
