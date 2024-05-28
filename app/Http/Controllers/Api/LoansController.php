@@ -64,58 +64,6 @@ class LoansController extends Controller
 
     // Responde a requisição com um status `200` indicando o sucesso da operação.
     return response()->json($data, 200);
-
-    // $perPage = $request->input('per_page', 10);
-
-    // $loans = Loan::with('loanedBooks.book')->paginate($perPage);
-
-    // if ($loans->isEmpty()) {
-    //   return response()->json(['message' => 'Nenhum resultado encontrado.'], 404);
-    // }
-
-    // $data = $loans->map(function ($loan) {
-    //   return [
-    //     'id' => $loan->id,
-    //     'user_id' => $loan->user_id,
-    //     'user_name' => $loan->user->name,
-    //     'loan_date' => $loan->loan_date,
-    //     'return_date' => $loan->return_date,
-    //     'expected_return_date' => $loan->expected_return_date,
-    //     'books' => $loan->loanedBooks->map(function ($loanedBook) {
-    //       if ($loanedBook->book) {
-    //         return [
-    //           'book' => [
-    //             'id' => $loanedBook->book->id,
-    //             'title' => $loanedBook->book->title,
-    //             'publication_year' => $loanedBook->book->publication_year,
-    //             'authors' => $loanedBook->book->authors->map(function ($author) {
-    //               return [
-    //                 'author' => [
-    //                   'id' => $author->id,
-    //                   'name' => $author->name,
-    //                 ]
-    //               ];
-    //             })
-    //           ]
-    //         ];
-    //       }
-    //       return [];
-    //     })->toArray(),
-    //   ];
-    // })->toArray();
-
-    // // Retorna a resposta paginada no formato desejado
-    // return response()->json([
-    //   'loans' => $data,
-    //   'pagination' => [
-    //     'total' => $loans->total(),
-    //     'per_page' => $loans->perPage(),
-    //     'current_page' => $loans->currentPage(),
-    //     'last_page' => $loans->lastPage(),
-    //     'from' => $loans->firstItem(),
-    //     'to' => $loans->lastItem(),
-    //   ],
-    // ]);
   }
 
   /**
@@ -162,7 +110,7 @@ class LoansController extends Controller
     // Formatamos a saída como um array.
     $data = $this->loanService->getLoan($loan);
 
-    return response()->json(['loan' => $data], 200);
+    return response()->json($data, 200);
   }
 
   /**
