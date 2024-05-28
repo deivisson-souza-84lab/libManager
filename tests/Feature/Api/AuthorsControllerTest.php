@@ -12,6 +12,8 @@ class AuthorsControllerTest extends TestCase
 {
   use RefreshDatabase; // Use isso para garantir que o banco de dados seja redefinido após cada teste
 
+  protected $route = '/api/authors';
+
   /**
    * Testa a utilização do método index sem autenticação
    * 
@@ -19,7 +21,7 @@ class AuthorsControllerTest extends TestCase
    */
   public function testindexNotAuthorized(): void
   {
-    $response = $this->getJson('/api/authors');
+    $response = $this->getJson($this->route);
 
     $response->assertStatus(401);
   }
@@ -34,7 +36,7 @@ class AuthorsControllerTest extends TestCase
     $user = User::factory()->create();
     $token = auth()->login($user);
 
-    $response = $this->getJson('/api/authors');
+    $response = $this->getJson($this->route);
 
     $response->assertStatus(404);
   }
@@ -46,15 +48,14 @@ class AuthorsControllerTest extends TestCase
    */
   public function testStore()
   {
-    $user = User::factory()->create();
-    $token = auth()->login($user);
+    $user = User::factory()->admin()->create();
 
     $authorData = [
       'name' => 'John Doe',
       'date_of_birth' => '1980-01-01',
     ];
 
-    $response = $this->actingAs($user, 'api')->postJson('/api/authors', $authorData);
+    $response = $this->actingAs($user, 'api')->postJson($this->route, $authorData);
 
     $response->assertStatus(201)
       ->assertJsonStructure([
@@ -77,13 +78,11 @@ class AuthorsControllerTest extends TestCase
   {
 
     $user = User::factory()->create();
-    $token = auth()->login($user);
-
 
     $author = Author::factory()->create();
     $this->assertModelExists($author);
 
-    $response = $this->actingAs($user, 'api')->getJson('/api/authors');
+    $response = $this->actingAs($user, 'api')->getJson($this->route);
 
     $response->assertStatus(200)
       ->assertJsonStructure([
@@ -117,11 +116,10 @@ class AuthorsControllerTest extends TestCase
   public function testShow()
   {
     $user = User::factory()->create();
-    $token = auth()->login($user);
 
     $author = Author::factory()->create();
 
-    $response = $this->getJson('/api/authors/' . $author->id);
+    $response = $this->actingAs($user, 'api')->getJson($this->route . '/' . $author->id);
 
     $response->assertStatus(200)
       ->assertJsonStructure([
@@ -143,9 +141,8 @@ class AuthorsControllerTest extends TestCase
   public function testShowNotFound()
   {
     $user = User::factory()->create();
-    $token = auth()->login($user);
 
-    $response = $this->getJson('/api/authors/' . 0);
+    $response = $this->actingAs($user, 'api')->getJson($this->route . '/0');
 
     $response->assertStatus(404)
       ->assertJsonStructure([
@@ -162,11 +159,10 @@ class AuthorsControllerTest extends TestCase
    */
   public function testDestroy()
   {
-    $user = User::factory()->create();
-    $token = auth()->login($user);
+    $user = User::factory()->admin()->create();
     $author = Author::factory()->create();
 
-    $response = $this->deleteJson('/api/authors/' . $author->id);
+    $response = $this->actingAs($user, 'api')->deleteJson($this->route . '/' . $author->id);
 
     $response->assertStatus(200)
       ->assertJsonStructure(['message']);

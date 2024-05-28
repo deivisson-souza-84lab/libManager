@@ -44,9 +44,8 @@ class LoansControllerTest extends TestCase
   public function testIndexNotFound()
   {
     $user = User::factory()->create();
-    $token = auth()->login($user);
 
-    $response = $this->getJson($this->route);
+    $response = $this->actingAs($user, 'api')->getJson($this->route);
 
     $response->assertStatus(404);
   }
@@ -60,7 +59,6 @@ class LoansControllerTest extends TestCase
   {
 
     $user = User::factory()->create();
-    $token = auth()->login($user);
 
     Author::factory(40)->create();
     Book::factory(40)->create();
@@ -94,11 +92,9 @@ class LoansControllerTest extends TestCase
    */
   public function testStore()
   {
-    $user = User::factory()->create();
-    $token = auth()->login($user);
+    $user = User::factory()->admin()->create();
 
     Author::factory(20)->create();
-    $author = Author::first();
 
     Book::factory(20)->create();
     $book = Book::first();
@@ -135,7 +131,6 @@ class LoansControllerTest extends TestCase
   public function testShow()
   {
     $user = User::factory()->create();
-    $token = auth()->login($user);
 
     Author::factory(80)->create();
     Book::factory(80)->create();
@@ -167,9 +162,8 @@ class LoansControllerTest extends TestCase
   public function testShowNotFound()
   {
     $user = User::factory()->create();
-    $token = auth()->login($user);
 
-    $response = $this->getJson($this->route . 0);
+    $response = $this->actingAs($user, 'api')->getJson($this->route . 0);
 
     $response->assertStatus(404)
       ->assertJsonStructure([
@@ -186,8 +180,7 @@ class LoansControllerTest extends TestCase
    */
   public function testDestroy()
   {
-    $user = User::factory()->create();
-    $token = auth()->login($user);
+    $user = User::factory()->admin()->create();
 
     Author::factory(80)->create();
     Book::factory(80)->create();
@@ -195,7 +188,7 @@ class LoansControllerTest extends TestCase
 
     $loan = Loan::first();
 
-    $response = $this->deleteJson($this->route . '/' . $loan->id);
+    $response = $this->actingAs($user, 'api')->deleteJson($this->route . '/' . $loan->id);
 
     $response->assertStatus(200)
       ->assertJsonStructure(['message']);

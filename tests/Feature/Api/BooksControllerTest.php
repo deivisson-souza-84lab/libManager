@@ -15,6 +15,8 @@ class BooksControllerTest extends TestCase
 {
     use RefreshDatabase; // Use isso para garantir que o banco de dados seja redefinido após cada teste
 
+    protected $route = '/api/books';
+
     protected $faker;
 
     public function setUp(): void
@@ -31,7 +33,7 @@ class BooksControllerTest extends TestCase
      */
     public function testindexNotAuthorized(): void
     {
-        $response = $this->getJson('/api/books');
+        $response = $this->getJson($this->route);
 
         $response->assertStatus(401);
     }
@@ -44,9 +46,8 @@ class BooksControllerTest extends TestCase
     public function testIndexNotFound()
     {
         $user = User::factory()->create();
-        $token = auth()->login($user);
 
-        $response = $this->getJson('/api/books');
+        $response = $this->actingAs($user, 'api')->getJson($this->route);
 
         $response->assertStatus(404);
     }
@@ -60,14 +61,13 @@ class BooksControllerTest extends TestCase
     {
 
         $user = User::factory()->create();
-        $token = auth()->login($user);
 
         Author::factory(20)->create();
 
         $book = Book::factory()->create();
         $this->assertModelExists($book);
 
-        $response = $this->actingAs($user, 'api')->getJson('/api/books');
+        $response = $this->actingAs($user, 'api')->getJson($this->route);
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -100,8 +100,7 @@ class BooksControllerTest extends TestCase
      */
     public function testStore()
     {
-        $user = User::factory()->create();
-        $token = auth()->login($user);
+        $user = User::factory()->admin()->create();
 
         Author::factory(20)->create();
         $author = Author::first();
@@ -115,7 +114,7 @@ class BooksControllerTest extends TestCase
             ]
         ];
 
-        $response = $this->actingAs($user, 'api')->postJson('/api/books', $bookData);
+        $response = $this->actingAs($user, 'api')->postJson($this->route, $bookData);
 
         $response->assertStatus(201)
             ->assertJsonStructure([
@@ -139,14 +138,13 @@ class BooksControllerTest extends TestCase
     public function testShow()
     {
         $user = User::factory()->create();
-        $token = auth()->login($user);
 
         Author::factory(20)->create();
 
         $book = Book::factory()->create();
         $this->assertModelExists($book);
 
-        $response = $this->getJson('/api/books/' . $book->id);
+        $response = $this->actingAs($user, 'api')->getJson($this->route . '/' . $book->id);
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -168,9 +166,8 @@ class BooksControllerTest extends TestCase
     public function testShowNotFound()
     {
         $user = User::factory()->create();
-        $token = auth()->login($user);
 
-        $response = $this->getJson('/api/books/' . 0);
+        $response = $this->actingAs($user, 'api')->getJson($this->route . '/0');
 
         $response->assertStatus(404)
             ->assertJsonStructure([
@@ -187,15 +184,14 @@ class BooksControllerTest extends TestCase
      */
     public function testDestroy()
     {
-        $user = User::factory()->create();
-        $token = auth()->login($user);
+        $user = User::factory()->admin()->create();
 
         Author::factory(20)->create();
 
         $book = Book::factory()->create();
         $this->assertModelExists($book);
 
-        $response = $this->deleteJson('/api/books/' . $book->id);
+        $response = $this->actingAs($user, 'api')->deleteJson($this->route . '/' . $book->id);
 
         $response->assertStatus(200)
             ->assertJsonStructure(['message']);
