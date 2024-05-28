@@ -15,18 +15,14 @@ class StoreUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // Se o campo 'role' não estiver presente, permita a requisição
-        if (!$this->has('role')) {
-            return true;
-        }
+        // Se o campo 'role' estiver presente
+        if ($this->has('role') && $this->has('role') == 'admin') {
 
-        // Se o campo 'role' estiver presente, verifique se o usuário está autenticado e é um administrador
-        if (Auth::check() && Auth::user()->isAdmin()) {
-            return true;
+            return Auth::check() && Auth::user()->isAdmin();
         }
 
         // Lança uma exceção personalizada se a autorização falhar
-        return false;
+        return true;
     }
 
     /**
