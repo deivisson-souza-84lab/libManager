@@ -80,7 +80,7 @@ class ApiController extends Controller
 
       if (!$token) {
         return response()->json([
-          'message' => 'Login inváido',
+          'message' => 'Login inválido',
         ], 401);
       }
 
