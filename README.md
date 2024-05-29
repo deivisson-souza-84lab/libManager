@@ -58,33 +58,104 @@ Um projeto docker-compose foi disponibilizado paralelamente a fim de montar toda
     DB_DATABASE=[dbname]
     DB_USERNAME=[dbuser]
     DB_PASSWORD=[dbpassword]
+    ...
+    MAIL_MAILER=smtp
+    MAIL_HOST=[seu host SMTP]
+    MAIL_PORT=[A porta que estará usando]
+    MAIL_USERNAME=[seu usuário do servidor smtp]
+    MAIL_PASSWORD=[sua senha do servidor smtp]
+    MAIL_ENCRYPTION=[o tipo de encriptação do servidor smtp]
     ```
-
-    > **Atenção**
-    > Não recomendo a utilização desta aplicação com o `sqlite`.
 
 4. Salve e feche o arquivo `.env` e execute os seguintes comando no terminal.
 
-    O primeiro deles irá instalação todas as dependências do arquivo `composer.json`:
+    O primeiro deles será a instalação do projeto com o composer.
     ```
     composer install
     ```
 
-    Em seguida, vamos gerar a API KEY, no arquivo `.env` com o comando:
+    Após a instalação, vamos gerar a chave de criptografia para a aplicação. Esta chave é utilizada pelo Laravel para diversas operações criptográficas.
     ```
     php artisan key:generate
     ```
 
-    O próximo passo, será gerar a `secret` que será utilizada pelo JWT:
+    Vamos também gerar uma secret. Este comando gera uma chave secreta que será usada para assinar os tokens JWT.
     ```
     php artisan jwt:secret
     ```
 
     Agora vamos executar as migrations criando a nossa estrutura no banco de dados:
     ```
-    php artisan migrate --seed
+    php artisan migrate
     ```
+    > ## Opcional
+    > De modo opcional, você pode querer executar testes para ver se tudo está funcionando bem. Para isso, execute o comando abaixo.
+    > ```bash
+    > 4dc83a933195:/var/www/app# php artisan test
+    > ```
+    > 
+    > O resultado esperado será algo parecido com:
+    > ```
+    > PASS  Tests\Unit\ExampleTest
+    > ✓ that true is true																			0.45s
+    > 
+    > PASS  Tests\Feature\Api\ApiControllerTest
+    > ✓ register																					13.20s
+    > ✓ login																						3.52s
+    > ✓ invalid login																				0.21s
+    > ✓ profile																					0.18s
+    > ✓ refresh token																				0.34s
+    > ✓ logout																					0.30s
+    > 
+    > PASS  Tests\Feature\Api\AuthorsControllerTest
+    > ✓ index not authorized																		0.29s
+    > ✓ index not found																			0.35s
+    > ✓ store																						0.46s
+    > ✓ index																						0.37s
+    > ✓ show																						0.20s
+    > ✓ show not found																			0.19s
+    > ✓ destroy																					0.20s
+    > 
+    > PASS  Tests\Feature\Api\BooksControllerTest
+    > ✓ index not authorized																		0.41s
+    > ✓ index not found																			0.23s
+    > ✓ index																						0.29s
+    > ✓ store																						0.25s
+    > ✓ show																						0.21s
+    > ✓ show not found																			0.18s
+    > ✓ destroy																					0.20s
+    > 
+    > PASS  Tests\Feature\Api\LoansControllerTest
+    > ✓ index not authorized																		0.19s
+    > ✓ index not found																			0.20s
+    > ✓ index																						0.64s
+    > ✓ store																						10.19s
+    > ✓ show																						0.81s
+    > ✓ show not found																			0.43s
+    > ✓ destroy																					0.78s
+    > 
+    > Tests:																	28 passed (198 assertions)
+    > Duration:																					39.85s
+    > ```
+    > Após a execução dos testes o banco de dados será higienizado, o que significa que tadas as informações ali serão perdidas. Se desejar trabalhar com um volume de informações fakes para o desenvolvimento de um front-end para esta aplicação, por exemplo, pode usar os Seeder do Laravel que populam o banco através de Factories.
+    > Basta executar:
+    > ```bash
+    > php artisan db:seed
+    > ```
+    > Com esse comando a base de dados será populada e um novo usuário admin será criado para utilização.
 
+    Por fim, aqui a instalação já estará apta para utilização, contudo, não estará completa sem antes iniciarmos a fila de trabalho que está responsável pelo envio de e-mail quando um empréstimo for criado.
+    
+    Há duas maneiras de se fazer isso. O comando abaixo vai abrir a fila de serviço no seu terminal, mas vai manter a seção ocupada. Se você só quiser ver a coisa acontecendo e não for utilizar o terminal, é uma boa opção. Utilize "**Ctrl+C**" para sair.
+    ```bash
+    php artisan queue:work -v
+    ```
+    
+    Caso queira iniciar a fila como um serviço, utilize o comando abaixo para iniciar um serviço que montamos utilizando o `supervisor` um recurso do Linux. A fila será iniciada e rodará em background.
+    ```bash
+    nohup supervisord -c /etc/supervisord.conf &
+    ```
+    Agora sim podemos dar a instalação por finalizada.
 ## Funcionalidades
 
 ### Autenticação
