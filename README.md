@@ -91,7 +91,7 @@ Um projeto docker-compose foi disponibilizado paralelamente a fim de montar toda
     > ## Opcional
     > De modo opcional, você pode querer executar testes para ver se tudo está funcionando bem. Para isso, execute o comando abaixo.
     > ```bash
-    > 4dc83a933195:/var/www/app# php artisan test
+    > php artisan test
     > ```
     > 
     > O resultado esperado será algo parecido com:
