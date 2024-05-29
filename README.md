@@ -20,7 +20,7 @@ Este projeto foi desenvolvido com PHP 8.3.4, Laravel 11.x e MariaDB 11.3.2.
 
 Para testes de disparo de e-mail foi utilizado o Mailhog, uma pequena aplicação que simula o serviço de SMTP para envios.
 
-Um projeto docker-compose será disponibilizado paralelamente a fim de montar toda a estrutura necessária para execução deste projeto.
+Um projeto docker-compose foi disponibilizado paralelamente a fim de montar toda a estrutura necessária para execução deste projeto. Acesse em [libManagerEnvironment](https://github.com/deivisson-souza-84lab/libManagerEnvironment)
 
 > **PHP** 8.3.4
 > **Laravel** 11.x
